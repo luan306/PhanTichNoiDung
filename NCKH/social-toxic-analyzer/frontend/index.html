@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lăng Kính — Phân tích hành vi mạng xã hội</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #F7F5F0;
+    --panel: #FFFFFF;
+    --ink: #1E2A30;
+    --ink-soft: #5A6B71;
+    --line: #DFDACD;
+    --accent: #2D6A6A;
+    --accent-soft: #E4EFEC;
+    --warn: #C97A2B;
+    --warn-soft: #FBEEE1;
+    --danger: #AE3B45;
+    --danger-soft: #F7E5E4;
+    --ok: #4C7A56;
+    --ok-soft: #E9F1E9;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
+  .serif{font-family:'Source Serif 4', serif;}
+  #root{min-height:100vh;}
+  .app{max-width:1080px;margin:0 auto;padding:40px 24px 80px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:32px;}
+  .header h1{font-size:32px;font-weight:600;margin:0 0 6px;letter-spacing:-0.01em;}
+  .header p{margin:0;color:var(--ink-soft);font-size:14.5px;max-width:520px;line-height:1.5;}
+  .tabs{display:flex;gap:4px;margin-bottom:28px;border-bottom:1px solid var(--line);}
+  .tab{padding:10px 4px;margin-right:24px;background:none;border:none;font-family:'Inter';font-size:14.5px;font-weight:500;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent;position:relative;top:1px;}
+  .tab.active{color:var(--ink);border-bottom-color:var(--accent);}
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:32px;}
+  .stat{background:var(--panel);border:1px solid var(--line);padding:18px 20px;}
+  .stat .label{font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;}
+  .stat .value{font-size:26px;font-weight:600;font-family:'Source Serif 4';}
+  textarea{width:100%;min-height:130px;border:1px solid var(--line);background:var(--panel);padding:14px;font-family:'Inter';font-size:14.5px;color:var(--ink);resize:vertical;line-height:1.5;}
+  textarea:focus{outline:none;border-color:var(--accent);}
+  .btn{background:var(--ink);color:#fff;border:none;padding:11px 22px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Inter';}
+  .btn:hover{background:#0f1719;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .btn-outline{background:none;border:1px solid var(--line);color:var(--ink);}
+  .btn-outline:hover{border-color:var(--ink);}
+  .field-row{display:flex;gap:10px;margin-top:10px;}
+  input[type=text]{flex:1;border:1px solid var(--line);padding:10px 12px;font-family:'Inter';font-size:14px;background:var(--panel);}
+  input[type=text]:focus{outline:none;border-color:var(--accent);}
+  .result-card{margin-top:24px;border:1px solid var(--line);background:var(--panel);}
+  .result-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);}
+  .severity-pill{font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:2px;}
+  .cat-list{padding:16px 20px;display:flex;flex-direction:column;gap:10px;}
+  .cat-item{display:flex;justify-content:space-between;align-items:center;font-size:14px;}
+  .cat-item .terms{color:var(--ink-soft);font-size:13px;margin-top:2px;}
+  .risk-banner{background:var(--danger-soft);color:var(--danger);border-left:3px solid var(--danger);padding:12px 16px;font-size:13.5px;margin:0 20px 16px;line-height:1.5;}
+  .drop-zone{border:1px dashed var(--line);background:var(--panel);padding:36px 20px;text-align:center;color:var(--ink-soft);font-size:14px;cursor:pointer;}
+  .drop-zone.drag{border-color:var(--accent);background:var(--accent-soft);}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);color:var(--ink-soft);font-weight:500;font-size:12.5px;}
+  td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;}
+  .chart-box{background:var(--panel);border:1px solid var(--line);padding:18px;}
+  .chart-box h3{margin:0 0 14px;font-size:14px;font-weight:600;font-family:'Inter';}
+  .empty{color:var(--ink-soft);font-size:14px;padding:40px 0;text-align:center;}
+  .note{font-size:12.5px;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
+  @media (max-width:720px){
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+    .charts-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const {
+  useState,
+  useEffect,
+  useRef,
+  useMemo
+} = React;
+
+// Đổi URL này thành địa chỉ backend thật khi triển khai
+const API_BASE = window.API_BASE || 'http://localhost:4000';
+const SEVERITY_STYLE = {
+  'Bình thường': {
+    bg: 'var(--ok-soft)',
+    fg: 'var(--ok)'
+  },
+  'Cần chú ý': {
+    bg: 'var(--warn-soft)',
+    fg: 'var(--warn)'
+  },
+  'Tiêu cực': {
+    bg: 'var(--warn-soft)',
+    fg: '#9C5A20'
+  },
+  'Nghiêm trọng - cần can thiệp': {
+    bg: 'var(--danger-soft)',
+    fg: 'var(--danger)'
+  }
+};
+const CATEGORY_LABELS = {
+  bat_nat: 'Bắt nạt / lăng mạ',
+  tuc_tiu: 'Ngôn từ tục tĩu',
+  ky_thi: 'Kỳ thị / phân biệt',
+  de_doa: 'Đe dọa / kích động',
+  nguy_co_tam_ly: 'Dấu hiệu nguy cơ tâm lý'
+};
+function buildDemoStats() {
+  return {
+    total: 128,
+    bySeverity: [
+      { severity: 'Bình thường', count: 52 },
+      { severity: 'Cần chú ý', count: 35 },
+      { severity: 'Tiêu cực', count: 24 },
+      { severity: 'Nghiêm trọng - cần can thiệp', count: 17 }
+    ],
+    riskFlagged: 41,
+    recentTrend: [
+      { day: '2026-09-16', count: 5, avgScore: 15.4 },
+      { day: '2026-09-17', count: 8, avgScore: 18.2 },
+      { day: '2026-09-18', count: 11, avgScore: 22.1 },
+      { day: '2026-09-19', count: 7, avgScore: 19.8 },
+      { day: '2026-09-20', count: 12, avgScore: 24.7 },
+      { day: '2026-09-21', count: 9, avgScore: 21.5 },
+      { day: '2026-09-22', count: 10, avgScore: 25.3 },
+      { day: '2026-09-23', count: 13, avgScore: 27.9 },
+      { day: '2026-09-24', count: 9, avgScore: 20.8 },
+      { day: '2026-09-25', count: 14, avgScore: 30.2 },
+      { day: '2026-09-26', count: 11, avgScore: 26.1 },
+      { day: '2026-09-27', count: 8, avgScore: 18.4 },
+      { day: '2026-09-28', count: 15, avgScore: 31.6 },
+      { day: '2026-09-29', count: 6, avgScore: 17.3 }
+    ]
+  };
+}
+function buildMockAnalysis(inputText) {
+  const raw = String(inputText || '').trim();
+  if (!raw) {
+    return {
+      originalText: raw,
+      totalScore: 0,
+      severity: 'Bình thường',
+      severityColor: 'green',
+      categories: {},
+      riskFlag: false,
+      demoMode: true,
+      analyzedAt: new Date().toISOString(),
+      model: 'demo-offline'
+    };
+  }
+
+  const text = raw.toLowerCase();
+  const rules = [
+    { key: 'nguy_co_tam_ly', terms: ['chán đời', 'muốn biến mất', 'không muốn sống', 'tự làm hại', 'biến mất', 'không ai cần mình', 'hết hy vọng'] },
+    { key: 'de_doa', terms: ['đe dọa', 'nói chết', 'bắt đầu đánh', 'cắt', 'không cho ai'] },
+    { key: 'bat_nat', terms: ['mày ngu', 'thế đéo nào', 'mẹ mày', 'đồ ngu', 'vô dụng'] },
+    { key: 'tuc_tiu', terms: ['đm', 'đéo', 'óc chó', 'thằng ngu', 'con cặc'] },
+    { key: 'ky_thi', terms: ['thằng khùng', 'đồ dị', 'kẻ bệnh', 'ngu như lợn'] }
+  ];
+
+  const categories = {};
+  let totalScore = 0;
+
+  rules.forEach((rule) => {
+    const matchedTerms = rule.terms.filter(term => text.includes(term));
+    if (matchedTerms.length) {
+      const weight = {
+        nguy_co_tam_ly: 8,
+        de_doa: 6,
+        bat_nat: 5,
+        tuc_tiu: 4,
+        ky_thi: 5
+      }[rule.key] || 3;
+
+      const score = matchedTerms.length * weight;
+      categories[rule.key] = {
+        count: matchedTerms.length,
+        matchedTerms,
+        score
+      };
+      totalScore += score;
+    }
+  });
+
+  const severity = totalScore >= 30 ? 'Nghiêm trọng - cần can thiệp' : totalScore >= 18 ? 'Tiêu cực' : totalScore >= 8 ? 'Cần chú ý' : 'Bình thường';
+  const riskFlag = totalScore >= 16 || Boolean(categories.nguy_co_tam_ly);
+
+  return {
+    originalText: raw,
+    totalScore: Math.min(totalScore, 100),
+    severity,
+    severityColor: severity === 'Nghiêm trọng - cần can thiệp' ? 'red' : severity === 'Tiêu cực' ? 'orange' : severity === 'Cần chú ý' ? 'yellow' : 'green',
+    categories,
+    riskFlag,
+    demoMode: true,
+    analyzedAt: new Date().toISOString(),
+    model: 'demo-offline'
+  };
+}
+function Pill({
+  severity
+}) {
+  const s = SEVERITY_STYLE[severity] || SEVERITY_STYLE['Bình thường'];
+  return /*#__PURE__*/React.createElement("span", {
+    className: "severity-pill",
+    style: {
+      background: s.bg,
+      color: s.fg
+    }
+  }, severity);
+}
+function SingleAnalysis() {
+  const [text, setText] = useState('');
+  const [author, setAuthor] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  async function handleAnalyze() {
+    if (!text.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text,
+          author: author || null
+        })
+      });
+
+      if (!res.ok) throw new Error('Không kết nối được API');
+
+      const data = await res.json();
+      setResult(data);
+    } catch (e) {
+      const mockResult = buildMockAnalysis(text);
+      setResult(mockResult);
+      setError('Backend chưa chạy hoặc MySQL chưa sẵn sàng — đang hiển thị chế độ demo ảo để bạn xem kết quả phân tích.');
+    } finally {
+      setLoading(false);
+    }
+  }
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("textarea", {
+    placeholder: "Dán nội dung bình luận / bài đăng cần phân tích...",
+    value: text,
+    onChange: e => setText(e.target.value)
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "field-row"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Tên học sinh / tài khoản (tuỳ chọn)",
+    value: author,
+    onChange: e => setAuthor(e.target.value)
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    onClick: handleAnalyze,
+    disabled: loading || !text.trim()
+  }, loading ? 'Đang phân tích...' : 'Phân tích')), error && /*#__PURE__*/React.createElement("p", {
+    className: "note",
+    style: {
+      color: 'var(--danger)'
+    }
+  }, error), result && !result.error && /*#__PURE__*/React.createElement("div", {
+    className: "result-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "result-head"
+  }, /*#__PURE__*/React.createElement("strong", null, "Kết quả"), /*#__PURE__*/React.createElement(Pill, {
+    severity: result.severity
+  })), result.riskFlag && /*#__PURE__*/React.createElement("div", {
+    className: "risk-banner"
+  }, "Nội dung có dấu hiệu nguy cơ tâm lý (ý nghĩ tiêu cực về bản thân / tự hại). Khuyến nghị nhà trường liên hệ phụ huynh và chuyên viên tâm lý học đường sớm nhất có thể, thay vì chỉ xử lý như một vi phạm thông thường."), Object.keys(result.categories).length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "cat-list"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "note"
+  }, "Không phát hiện dấu hiệu tiêu cực rõ rệt.")) : /*#__PURE__*/React.createElement("div", {
+    className: "cat-list"
+  }, Object.entries(result.categories).map(([cat, info]) => /*#__PURE__*/React.createElement("div", {
+    key: cat,
+    className: "cat-item"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", null, CATEGORY_LABELS[cat] || cat), /*#__PURE__*/React.createElement("div", {
+    className: "terms"
+  }, "Cụm từ khớp: ", info.matchedTerms.join(', '))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: 'var(--ink-soft)'
+    }
+  }, "×", info.count))))));
+}
+function BatchAnalysis({
+  onBatchDone
+}) {
+  const [dragging, setDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [batchResult, setBatchResult] = useState(null);
+  const fileInput = useRef(null);
+  async function uploadFile(file) {
+    setLoading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_BASE}/api/analyze-csv`, {
+        method: 'POST',
+        body: formData
+      });
+      if (!res.ok) throw new Error('Lỗi upload');
+      const data = await res.json();
+      setBatchResult(data);
+      onBatchDone && onBatchDone(data);
+    } catch (e) {
+      setError('Không xử lý được file. Kiểm tra backend và định dạng CSV (cột "text" bắt buộc).');
+    } finally {
+      setLoading(false);
+    }
+  }
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: `drop-zone ${dragging ? 'drag' : ''}`,
+    onDragOver: e => {
+      e.preventDefault();
+      setDragging(true);
+    },
+    onDragLeave: () => setDragging(false),
+    onDrop: e => {
+      e.preventDefault();
+      setDragging(false);
+      const file = e.dataTransfer.files[0];
+      if (file) uploadFile(file);
+    },
+    onClick: () => fileInput.current.click()
+  }, loading ? 'Đang xử lý...' : 'Kéo thả file CSV vào đây, hoặc bấm để chọn file', /*#__PURE__*/React.createElement("div", {
+    className: "note"
+  }, "Cột bắt buộc: text. Tuỳ chọn: author, timestamp.")), /*#__PURE__*/React.createElement("input", {
+    ref: fileInput,
+    type: "file",
+    accept: ".csv",
+    style: {
+      display: 'none'
+    },
+    onChange: e => e.target.files[0] && uploadFile(e.target.files[0])
+  }), error && /*#__PURE__*/React.createElement("p", {
+    className: "note",
+    style: {
+      color: 'var(--danger)'
+    }
+  }, error), batchResult && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Tổng số dòng"), /*#__PURE__*/React.createElement("div", {
+    className: "value"
+  }, batchResult.summary.total)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Cần can thiệp"), /*#__PURE__*/React.createElement("div", {
+    className: "value",
+    style: {
+      color: 'var(--danger)'
+    }
+  }, batchResult.summary.bySeverity['Nghiêm trọng - cần can thiệp'] || 0)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Cảnh báo nguy cơ tâm lý"), /*#__PURE__*/React.createElement("div", {
+    className: "value",
+    style: {
+      color: 'var(--danger)'
+    }
+  }, batchResult.summary.riskFlagged)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Bình thường"), /*#__PURE__*/React.createElement("div", {
+    className: "value",
+    style: {
+      color: 'var(--ok)'
+    }
+  }, batchResult.summary.bySeverity['Bình thường'] || 0))), /*#__PURE__*/React.createElement("div", {
+    className: "result-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "result-head"
+  }, /*#__PURE__*/React.createElement("strong", null, "Chi tiết từng dòng")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxHeight: 360,
+      overflowY: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Tác giả"), /*#__PURE__*/React.createElement("th", null, "Nội dung"), /*#__PURE__*/React.createElement("th", null, "Mức độ"), /*#__PURE__*/React.createElement("th", null, "Điểm"))), /*#__PURE__*/React.createElement("tbody", null, batchResult.results.map(r => /*#__PURE__*/React.createElement("tr", {
+    key: r.id
+  }, /*#__PURE__*/React.createElement("td", null, r.author || '—'), /*#__PURE__*/React.createElement("td", {
+    style: {
+      maxWidth: 380
+    }
+  }, r.originalText), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(Pill, {
+    severity: r.severity
+  })), /*#__PURE__*/React.createElement("td", null, r.totalScore)))))))));
+}
+function Dashboard() {
+  const [stats, setStats] = useState(() => buildDemoStats());
+  const [error, setError] = useState(null);
+  const [backendUnavailable, setBackendUnavailable] = useState(false);
+  const catChartRef = useRef(null);
+  const trendChartRef = useRef(null);
+  const catChartInstance = useRef(null);
+  const trendChartInstance = useRef(null);
+  async function loadStats() {
+    try {
+      const res = await fetch(`${API_BASE}/api/stats`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const normalized = data && typeof data === 'object' ? data : {};
+      setBackendUnavailable(false);
+      const hasMeaningfulStats = Number(normalized.total || 0) > 0 || (Array.isArray(normalized.bySeverity) && normalized.bySeverity.length > 0) || (Array.isArray(normalized.recentTrend) && normalized.recentTrend.length > 0);
+      if (!hasMeaningfulStats) {
+        setStats(buildDemoStats());
+        setError('Backend đã kết nối nhưng chưa có dữ liệu phân tích trong MySQL; dashboard đang hiển thị số liệu minh họa.');
+        return;
+      }
+      setStats(normalized);
+      setError(null);
+    } catch (e) {
+      setStats(buildDemoStats());
+      setBackendUnavailable(true);
+      setError('Backend chưa sẵn sàng, đang hiển thị dữ liệu demo ảo để bạn xem dashboard.');
+    }
+  }
+  useEffect(() => {
+    loadStats();
+  }, []);
+  useEffect(() => {
+    if (!stats || !catChartRef.current) return;
+    if (catChartInstance.current) catChartInstance.current.destroy();
+    catChartInstance.current = new Chart(catChartRef.current, {
+      type: 'bar',
+      data: {
+        labels: (stats.bySeverity || []).map(s => s.severity),
+        datasets: [{
+          data: (stats.bySeverity || []).map(s => s.count),
+          backgroundColor: '#2D6A6A'
+        }]
+      },
+      options: {
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+  }, [stats]);
+  useEffect(() => {
+    if (!stats || !trendChartRef.current) return;
+    if (trendChartInstance.current) trendChartInstance.current.destroy();
+    trendChartInstance.current = new Chart(trendChartRef.current, {
+      type: 'line',
+      data: {
+        labels: (stats.recentTrend || []).map(t => t.day),
+        datasets: [{
+          label: 'Số lượt phân tích',
+          data: (stats.recentTrend || []).map(t => t.count),
+          borderColor: '#AE3B45',
+          backgroundColor: 'rgba(174,59,69,0.08)',
+          fill: true,
+          tension: 0.25
+        }]
+      },
+      options: {
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+  }, [stats]);
+  if (!stats) return /*#__PURE__*/React.createElement("div", {
+    className: "empty"
+  }, "Đang tải dữ liệu...");
+  return /*#__PURE__*/React.createElement("div", null, error && /*#__PURE__*/React.createElement("div", {
+    className: "note",
+    style: {
+      color: backendUnavailable ? 'var(--danger)' : 'var(--ink-soft)',
+      marginBottom: 12,
+      background: backendUnavailable ? 'var(--danger-soft)' : 'var(--accent-soft)',
+      border: backendUnavailable ? '1px solid #F0C7CB' : '1px solid var(--line)',
+      padding: '10px 12px'
+    }
+  }, error, backendUnavailable && /*#__PURE__*/React.createElement("button", {
+    className: "btn-outline btn",
+    style: {
+      marginLeft: 10,
+      padding: '8px 12px',
+      fontSize: 12
+    },
+    onClick: loadStats
+  }, "Thử lại")), /*#__PURE__*/React.createElement("div", {
+    className: "stat-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Tổng lượt phân tích"), /*#__PURE__*/React.createElement("div", {
+    className: "value"
+  }, stats.total)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Cảnh báo nguy cơ tâm lý"), /*#__PURE__*/React.createElement("div", {
+    className: "value",
+    style: {
+      color: 'var(--danger)'
+    }
+  }, stats.riskFlagged)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "14 ngày gần nhất"), /*#__PURE__*/React.createElement("div", {
+    className: "value"
+  }, (stats.recentTrend || []).reduce((a, t) => a + t.count, 0))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Nhóm mức độ"), /*#__PURE__*/React.createElement("div", {
+    className: "value"
+  }, (stats.bySeverity || []).length))), /*#__PURE__*/React.createElement("div", {
+    className: "charts-grid"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "chart-box"
+  }, /*#__PURE__*/React.createElement("h3", null, "Phân bố theo mức độ"), /*#__PURE__*/React.createElement("canvas", {
+    ref: catChartRef,
+    height: "180"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "chart-box"
+  }, /*#__PURE__*/React.createElement("h3", null, "Xu hướng 14 ngày qua"), /*#__PURE__*/React.createElement("canvas", {
+    ref: trendChartRef,
+    height: "180"
+  }))));
+}
+function FacebookSync() {
+  const [pageId, setPageId] = useState('');
+  const [accessToken, setAccessToken] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState(null);
+  async function handleSync() {
+    setLoading(true);
+    setError(null);
+    setData(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/sync-facebook`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pageId: pageId || undefined,
+          accessToken: accessToken || undefined
+        })
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Lỗi không xác định');
+      setData(json);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "note",
+    style: {
+      marginBottom: 14
+    }
+  }, "Lấy bình luận từ các bài viết gần nhất trên Facebook Page mà bạn quản lý, phân tích tự động. Nếu để trống, hệ thống sẽ dùng ", /*#__PURE__*/React.createElement("code", null, "FB_PAGE_ID"), " / ", /*#__PURE__*/React.createElement("code", null, "FB_PAGE_ACCESS_TOKEN"), " cấu hình sẵn trong file ", /*#__PURE__*/React.createElement("code", null, ".env"), " của backend."), /*#__PURE__*/React.createElement("div", {
+    className: "field-row",
+    style: {
+      marginTop: 0
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Page ID (tuỳ chọn nếu đã set .env)",
+    value: pageId,
+    onChange: e => setPageId(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "field-row"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Page Access Token (tuỳ chọn nếu đã set .env)",
+    value: accessToken,
+    onChange: e => setAccessToken(e.target.value)
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    onClick: handleSync,
+    disabled: loading
+  }, loading ? 'Đang lấy dữ liệu...' : 'Đồng bộ & phân tích')), error && /*#__PURE__*/React.createElement("p", {
+    className: "note",
+    style: {
+      color: 'var(--danger)'
+    }
+  }, error), data && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Đã lấy"), /*#__PURE__*/React.createElement("div", {
+    className: "value"
+  }, data.fetchedCount ?? data.summary.total)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Cần can thiệp"), /*#__PURE__*/React.createElement("div", {
+    className: "value",
+    style: {
+      color: 'var(--danger)'
+    }
+  }, data.summary.bySeverity['Nghiêm trọng - cần can thiệp'] || 0)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Cảnh báo tâm lý"), /*#__PURE__*/React.createElement("div", {
+    className: "value",
+    style: {
+      color: 'var(--danger)'
+    }
+  }, data.summary.riskFlagged)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "label"
+  }, "Bình thường"), /*#__PURE__*/React.createElement("div", {
+    className: "value",
+    style: {
+      color: 'var(--ok)'
+    }
+  }, data.summary.bySeverity['Bình thường'] || 0))), /*#__PURE__*/React.createElement("div", {
+    className: "result-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "result-head"
+  }, /*#__PURE__*/React.createElement("strong", null, "Chi tiết")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxHeight: 360,
+      overflowY: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Tác giả"), /*#__PURE__*/React.createElement("th", null, "Nội dung"), /*#__PURE__*/React.createElement("th", null, "Mức độ"), /*#__PURE__*/React.createElement("th", null, "Điểm"))), /*#__PURE__*/React.createElement("tbody", null, data.results.map(r => /*#__PURE__*/React.createElement("tr", {
+    key: r.id
+  }, /*#__PURE__*/React.createElement("td", null, r.author || '(bài đăng của Page)'), /*#__PURE__*/React.createElement("td", {
+    style: {
+      maxWidth: 380
+    }
+  }, r.originalText), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(Pill, {
+    severity: r.severity
+  })), /*#__PURE__*/React.createElement("td", null, r.totalScore)))))))));
+}
+function App() {
+  const [tab, setTab] = useState('single');
+  return /*#__PURE__*/React.createElement("div", {
+    className: "app"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "header"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
+    className: "serif"
+  }, "Lăng Kính"), /*#__PURE__*/React.createElement("p", null, "Công cụ hỗ trợ nhà trường phát hiện sớm hành vi bắt nạt, ngôn từ độc hại và dấu hiệu nguy cơ tâm lý trong hoạt động mạng xã hội của học sinh, sinh viên."))), /*#__PURE__*/React.createElement("div", {
+    className: "tabs"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: `tab ${tab === 'single' ? 'active' : ''}`,
+    onClick: () => setTab('single')
+  }, "Phân tích nhanh"), /*#__PURE__*/React.createElement("button", {
+    className: `tab ${tab === 'batch' ? 'active' : ''}`,
+    onClick: () => setTab('batch')
+  }, "Tải lên hàng loạt"), /*#__PURE__*/React.createElement("button", {
+    className: `tab ${tab === 'facebook' ? 'active' : ''}`,
+    onClick: () => setTab('facebook')
+  }, "Đồng bộ Facebook"), /*#__PURE__*/React.createElement("button", {
+    className: `tab ${tab === 'dashboard' ? 'active' : ''}`,
+    onClick: () => setTab('dashboard')
+  }, "Thống kê")), tab === 'single' && /*#__PURE__*/React.createElement(SingleAnalysis, null), tab === 'batch' && /*#__PURE__*/React.createElement(BatchAnalysis, null), tab === 'facebook' && /*#__PURE__*/React.createElement(FacebookSync, null), tab === 'dashboard' && /*#__PURE__*/React.createElement(Dashboard, null));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(App, null));
+</script>
+</body>
+</html>

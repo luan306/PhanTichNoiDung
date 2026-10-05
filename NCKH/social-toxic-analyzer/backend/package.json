@@ -1,0 +1,18 @@
+{
+  "name": "social-behavior-analyzer-backend",
+  "version": "1.0.0",
+  "description": "API phân tích hành vi tiêu cực trên mạng xã hội của học sinh, sinh viên",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.6",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "multer": "^2.0.1",
+    "mysql2": "^3.10.0"
+  }
+}
